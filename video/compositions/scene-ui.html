@@ -1,0 +1,57 @@
+<template id="scene-ui-template">
+  <div data-composition-id="scene-ui" data-width="1920" data-height="1080" data-duration="7">
+    <div class="scene-content">
+      <div class="mock-store">
+        <div class="card c1"><span>Chaqueta Oslo</span></div>
+        <div class="card c2 highlight"><span>Camisa Riviera</span><em>El agente está viendo esto</em></div>
+        <div class="card c3"><span>Hoodie Pacífico</span></div>
+      </div>
+      <div class="mock-chat">
+        <p class="chat-label">Asistente</p>
+        <p class="chat-msg">Te muestro camisas casuales para el fin de semana.</p>
+      </div>
+    </div>
+    <style>
+      [data-composition-id="scene-ui"] .scene-content {
+        width: 100%; height: 100%; display: grid; grid-template-columns: 1.4fr 1fr; gap: 40px;
+        padding: 80px; background: #08090b; align-items: center;
+      }
+      [data-composition-id="scene-ui"] .mock-store {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+      }
+      [data-composition-id="scene-ui"] .card {
+        aspect-ratio: 3/4; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);
+        background: #101216; display: flex; flex-direction: column; justify-content: flex-end;
+        padding: 20px; color: #f8fafc; font-size: 20px; font-weight: 600;
+      }
+      [data-composition-id="scene-ui"] .card.highlight {
+        border-color: #79d8c4; box-shadow: 0 0 40px rgba(121,216,196,0.2);
+      }
+      [data-composition-id="scene-ui"] .card em {
+        font-size: 12px; font-style: normal; color: #79d8c4; margin-top: 8px;
+        text-transform: uppercase; letter-spacing: 0.08em;
+      }
+      [data-composition-id="scene-ui"] .mock-chat {
+        border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 32px;
+        background: rgba(16,18,22,0.9);
+      }
+      [data-composition-id="scene-ui"] .chat-label {
+        font-size: 14px; color: #79d8c4; text-transform: uppercase; letter-spacing: 0.15em;
+        margin-bottom: 16px;
+      }
+      [data-composition-id="scene-ui"] .chat-msg { font-size: 26px; color: #f8fafc; line-height: 1.4; }
+    </style>
+    <script>
+    (function(){
+      const tl = gsap.timeline({ paused: true });
+      tl.from(".c1", { y: 40, opacity: 0, duration: 0.5 }, 0);
+      tl.from(".c2", { y: 40, opacity: 0, duration: 0.5 }, 0.2);
+      tl.from(".c3", { y: 40, opacity: 0, duration: 0.5 }, 0.4);
+      tl.from(".mock-chat", { x: 40, opacity: 0, duration: 0.6 }, 0.5);
+      tl.to(".c2", { scale: 1.03, duration: 0.4, yoyo: true, repeat: 1 }, 1.2);
+      tl.to(".scene-content", { opacity: 0, duration: 0.5 }, 6.2);
+      window.__hfRegisterTimeline(tl);
+    })();
+    </script>
+  </div>
+</template>

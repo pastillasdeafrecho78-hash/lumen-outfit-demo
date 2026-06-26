@@ -1,0 +1,7 @@
+node_modules
+.next
+.env
+.env.local
+*.mp4
+!public/video/intro-poster.svg
+.DS_Store

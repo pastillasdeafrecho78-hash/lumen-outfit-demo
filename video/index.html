@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Lúmen Outfit — Intro</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        margin: 0; width: 1920px; height: 1080px;
+        overflow: hidden; background: #08090b;
+        font-family: system-ui, "Inter", sans-serif;
+      }
+      .scene { position: absolute; inset: 0; }
+    </style>
+    <script>
+      window.__hfRegisterTimeline = function (tl) {
+        window.__timelines = window.__timelines || {};
+        const id = document.currentScript?.closest("[data-composition-id]")?.getAttribute("data-composition-id");
+        if (id) window.__timelines[id] = tl;
+      };
+    </script>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="25" data-width="1920" data-height="1080">
+      <div class="scene" data-composition-id="scene-hook" data-composition-src="compositions/scene-hook.html" data-start="0" data-duration="6" data-track-index="1"></div>
+      <div class="scene" data-composition-id="scene-contrast" data-composition-src="compositions/scene-contrast.html" data-start="6" data-duration="7" data-track-index="1"></div>
+      <div class="scene" data-composition-id="scene-ui" data-composition-src="compositions/scene-ui.html" data-start="13" data-duration="7" data-track-index="1"></div>
+      <div class="scene" data-composition-id="scene-cta" data-composition-src="compositions/scene-cta.html" data-start="20" data-duration="5" data-track-index="1"></div>
+
+      <audio
+        id="narration"
+        data-start="0"
+        data-duration="25"
+        data-track-index="3"
+        src="audio/vo-full.wav"
+        preload="auto"
+      ></audio>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

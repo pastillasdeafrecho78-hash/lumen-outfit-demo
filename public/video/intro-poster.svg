@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#101216"/>
+      <stop offset="100%" style="stop-color:#08090b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <text x="960" y="480" text-anchor="middle" fill="#f8fafc" font-family="Inter,sans-serif" font-size="64" font-weight="700">Lúmen Outfit</text>
+  <text x="960" y="560" text-anchor="middle" fill="#94a3b8" font-family="Inter,sans-serif" font-size="28">Tienda agéntica con voz</text>
+  <rect x="760" y="620" width="400" height="4" rx="2" fill="#79d8c4" opacity="0.6"/>
+</svg>

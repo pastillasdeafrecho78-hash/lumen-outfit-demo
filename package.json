@@ -1,0 +1,33 @@
+{
+  "name": "lumen-outfit-demo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack -p 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "mcp": "tsx mcp-server/store.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "next": "^15.3.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.25.67",
+    "zustand": "^5.0.5"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@tailwindcss/postcss": "^4.1.8",
+    "@types/node": "^22.15.29",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.5",
+    "eslint": "^9.28.0",
+    "eslint-config-next": "^15.3.3",
+    "playwright": "^1.61.1",
+    "tailwindcss": "^4.1.8",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}

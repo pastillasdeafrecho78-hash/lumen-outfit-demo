@@ -1,0 +1,137 @@
+[
+  {
+    "id": "chaqueta-oslo",
+    "name": "Chaqueta Oslo",
+    "price": 2890,
+    "category": "chaquetas",
+    "colors": ["negro", "verde oliva"],
+    "sizes": ["S", "M", "L", "XL"],
+    "image": "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=600&h=750&fit=crop",
+    "tags": ["casual", "invierno", "abrigo"],
+    "description": "Chaqueta ligera impermeable con forro térmico. Ideal para noches frescas.",
+    "badge": "Nuevo"
+  },
+  {
+    "id": "camisa-lino",
+    "name": "Camisa de Lino Riviera",
+    "price": 1290,
+    "category": "camisas",
+    "colors": ["blanco", "azul claro", "arena"],
+    "sizes": ["S", "M", "L", "XL"],
+    "image": "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&h=750&fit=crop",
+    "tags": ["casual", "verano", "playa"],
+    "description": "Camisa de lino transpirable con corte relajado para clima cálido."
+  },
+  {
+    "id": "pantalon-selva",
+    "name": "Pantalón Selva",
+    "price": 1590,
+    "category": "pantalones",
+    "colors": ["caqui", "negro"],
+    "sizes": ["28", "30", "32", "34", "36"],
+    "image": "https://images.unsplash.com/photo-1473966968605-fa801b546a0b?w=600&h=750&fit=crop",
+    "tags": ["casual", "outdoor"],
+    "description": "Pantalón de corte recto con stretch y bolsillos utilitarios."
+  },
+  {
+    "id": "sueter-nube",
+    "name": "Suéter Nube",
+    "price": 1890,
+    "category": "suéteres",
+    "colors": ["gris", "crema", "azul marino"],
+    "sizes": ["S", "M", "L", "XL"],
+    "image": "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=600&h=750&fit=crop",
+    "tags": ["casual", "invierno", "capas"],
+    "description": "Tejido de algodón merino suave. Perfecto para capas en otoño.",
+    "badge": "Oferta"
+  },
+  {
+    "id": "vestido-luna",
+    "name": "Vestido Luna",
+    "price": 2190,
+    "category": "vestidos",
+    "colors": ["negro", "vino"],
+    "sizes": ["XS", "S", "M", "L"],
+    "image": "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&h=750&fit=crop",
+    "tags": ["elegante", "noche"],
+    "description": "Vestido midi con caída fluida. Elegante sin esfuerzo."
+  },
+  {
+    "id": "tenis-aurora",
+    "name": "Tenis Aurora",
+    "price": 2490,
+    "category": "calzado",
+    "colors": ["blanco", "negro"],
+    "sizes": ["25", "26", "27", "28", "29"],
+    "image": "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=600&h=750&fit=crop",
+    "tags": ["casual", "urbano"],
+    "description": "Suela de goma con amortiguación. Para caminar todo el día."
+  },
+  {
+    "id": "bufanda-alpino",
+    "name": "Bufanda Alpino",
+    "price": 690,
+    "category": "accesorios",
+    "colors": ["gris", "camel", "negro"],
+    "sizes": ["Única"],
+    "image": "https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=600&h=750&fit=crop",
+    "tags": ["invierno", "accesorio"],
+    "description": "Lana merino tejida a mano. Calidez sin volumen."
+  },
+  {
+    "id": "blazer-urban",
+    "name": "Blazer Urban",
+    "price": 3290,
+    "category": "chaquetas",
+    "colors": ["negro", "gris carbón"],
+    "sizes": ["S", "M", "L", "XL"],
+    "image": "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=600&h=750&fit=crop",
+    "tags": ["formal", "oficina"],
+    "description": "Corte slim con hombreras suaves. De reunión a cena."
+  },
+  {
+    "id": "hoodie-pacifico",
+    "name": "Hoodie Pacífico",
+    "price": 1190,
+    "category": "sudaderas",
+    "colors": ["negro", "gris", "verde bosque"],
+    "sizes": ["S", "M", "L", "XL"],
+    "image": "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=600&h=750&fit=crop",
+    "tags": ["casual", "fin de semana"],
+    "description": "Algodón orgánico cepillado por dentro. Comodidad máxima.",
+    "badge": "Oferta"
+  },
+  {
+    "id": "falda-olivo",
+    "name": "Falda Olivo",
+    "price": 1490,
+    "category": "faldas",
+    "colors": ["verde olivo", "negro"],
+    "sizes": ["XS", "S", "M", "L"],
+    "image": "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=600&h=750&fit=crop",
+    "tags": ["casual", "oficina"],
+    "description": "Midi plisada con cintura alta. Versátil para diario."
+  },
+  {
+    "id": "mochila-norte",
+    "name": "Mochila Norte",
+    "price": 1890,
+    "category": "accesorios",
+    "colors": ["negro", "arena"],
+    "sizes": ["Única"],
+    "image": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&h=750&fit=crop",
+    "tags": ["urbano", "viaje"],
+    "description": "Compartimento laptop 15\", tela reciclada resistente al agua."
+  },
+  {
+    "id": "jeans-horizonte",
+    "name": "Jeans Horizonte",
+    "price": 1690,
+    "category": "pantalones",
+    "colors": ["azul medio", "negro"],
+    "sizes": ["28", "30", "32", "34", "36"],
+    "image": "https://images.unsplash.com/photo-1542272604-787c3835535d?w=600&h=750&fit=crop",
+    "tags": ["casual", "diario"],
+    "description": "Corte recto clásico con denim elástico de recuperación rápida."
+  }
+]

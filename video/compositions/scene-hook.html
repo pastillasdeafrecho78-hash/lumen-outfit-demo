@@ -1,0 +1,38 @@
+<template id="scene-hook-template">
+  <div data-composition-id="scene-hook" data-width="1920" data-height="1080" data-duration="6">
+    <div class="scene-content">
+      <p class="eyebrow">Lúmen Outfit</p>
+      <h1 class="headline">¿Y si tu tienda entendiera lo que quieres?</h1>
+      <p class="subline">Un asistente de voz que navega, recomienda y compra contigo.</p>
+    </div>
+    <style>
+      [data-composition-id="scene-hook"] .scene-content {
+        width: 100%; height: 100%; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 32px;
+        background: radial-gradient(ellipse at 50% 40%, #1a1f28 0%, #08090b 70%);
+        padding: 0 120px;
+      }
+      [data-composition-id="scene-hook"] .eyebrow {
+        font-size: 18px; letter-spacing: 0.2em; text-transform: uppercase;
+        color: #79d8c4; font-weight: 700;
+      }
+      [data-composition-id="scene-hook"] .headline {
+        font-size: 72px; font-weight: 700; color: #f8fafc; text-align: center;
+        line-height: 1.1; max-width: 1100px;
+      }
+      [data-composition-id="scene-hook"] .subline {
+        font-size: 28px; color: #94a3b8; text-align: center; max-width: 800px;
+      }
+    </style>
+    <script>
+    (function(){
+      const tl = gsap.timeline({ paused: true });
+      tl.from(".eyebrow", { y: 20, opacity: 0, duration: 0.6 }, 0);
+      tl.from(".headline", { y: 40, opacity: 0, duration: 0.8 }, 0.2);
+      tl.from(".subline", { y: 30, opacity: 0, duration: 0.6 }, 0.5);
+      tl.to(".scene-content", { opacity: 0, duration: 0.5 }, 5.2);
+      window.__hfRegisterTimeline(tl);
+    })();
+    </script>
+  </div>
+</template>
