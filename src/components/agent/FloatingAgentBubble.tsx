@@ -22,10 +22,9 @@ function CloseIcon() {
 export function FloatingAgentBubble() {
   const chatOpen = useStore((s) => s.chatOpen);
   const setChatOpen = useStore((s) => s.setChatOpen);
-  const isAgentSpeaking = useStore((s) => s.isAgentSpeaking);
   const messages = useStore((s) => s.messages);
 
-  const hasActivity = messages.length > 0 || isAgentSpeaking;
+  const hasActivity = messages.length > 0;
 
   return (
     <div className="floating-agent" aria-label="Asistente de compra">
@@ -51,9 +50,9 @@ export function FloatingAgentBubble() {
 
       <button
         type="button"
-        className={`floating-agent__bubble ${chatOpen ? "floating-agent__bubble--open" : ""} ${isAgentSpeaking ? "floating-agent__bubble--speaking" : ""}`}
+        className={`floating-agent__bubble ${chatOpen ? "floating-agent__bubble--open" : ""}`}
         onClick={() => setChatOpen(!chatOpen)}
-        aria-label={chatOpen ? "Cerrar asistente" : "Abrir asistente de voz"}
+        aria-label={chatOpen ? "Cerrar asistente" : "Abrir asistente de compra"}
         aria-expanded={chatOpen}
       >
         <ChatIcon />

@@ -12,7 +12,6 @@ type StoreState = {
   filterQuery: string;
   filteredProducts: Product[];
   messages: ChatMessage[];
-  isAgentSpeaking: boolean;
   isAgentReady: boolean;
   sessionId: string;
   cartOpen: boolean;
@@ -25,7 +24,6 @@ type StoreState = {
   setFilterQuery: (q: string) => void;
   setFilteredProducts: (products: Product[]) => void;
   addMessage: (msg: Omit<ChatMessage, "id">) => void;
-  setAgentSpeaking: (v: boolean) => void;
   setAgentReady: (v: boolean) => void;
   setCartOpen: (open: boolean) => void;
   setChatOpen: (open: boolean) => void;
@@ -44,7 +42,6 @@ export const useStore = create<StoreState>((set, get) => ({
   filterQuery: "",
   filteredProducts: PRODUCTS,
   messages: [],
-  isAgentSpeaking: false,
   isAgentReady: true,
   sessionId: "demo-session",
   cartOpen: false,
@@ -78,8 +75,6 @@ export const useStore = create<StoreState>((set, get) => ({
     set((s) => ({
       messages: [...s.messages, { ...msg, id: uid() }],
     })),
-
-  setAgentSpeaking: (v) => set({ isAgentSpeaking: v }),
 
   setAgentReady: (v) => set({ isAgentReady: v }),
 

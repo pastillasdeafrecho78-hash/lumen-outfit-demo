@@ -141,7 +141,7 @@ export async function GET() {
     ready: true,
     mode: hasLiveAgent() ? "live" : "demo",
     provider: hasLiveAgent() ? "openrouter" : "demo-fallback",
-    model: process.env.OPENROUTER_MODEL || "google/gemini-2.0-flash-001",
+    model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
     service: "agent",
   });
 }

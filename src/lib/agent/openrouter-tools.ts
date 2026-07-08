@@ -127,7 +127,7 @@ export async function callOpenRouter(messages: OpenRouterMessage[]) {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error("OPENROUTER_API_KEY no configurada");
 
-  const model = process.env.OPENROUTER_MODEL || "google/gemini-2.0-flash-001";
+  const model = process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
   const siteUrl = process.env.OPENROUTER_SITE_URL || "https://lumen-outfit-demo.vercel.app";
   const siteName = process.env.OPENROUTER_SITE_NAME || "Lúmen Outfit Demo";
 

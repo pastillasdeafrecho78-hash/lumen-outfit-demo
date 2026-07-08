@@ -1,6 +1,6 @@
 # Lúmen Outfit — Demo tienda agéntica
 
-Demo de tienda en línea con asistente de voz que navega el catálogo, resalta productos y agrega al carrito. El agente usa **OpenRouter** (cualquier modelo compatible) y TTS opcional con **ElevenLabs**.
+Demo de tienda en línea con un asistente de chat que navega el catálogo, resalta productos y agrega al carrito. El agente usa **OpenRouter** con `google/gemini-2.5-flash`.
 
 ## Requisitos
 
@@ -17,43 +17,23 @@ npm run dev
 
 Abre [http://localhost:3000](http://localhost:3000) para la landing y [http://localhost:3000/demo](http://localhost:3000/demo) para la tienda en vivo.
 
-## Qué llenar tú manualmente
+## Variables de entorno
 
-### Obligatorio (para IA real, no modo demo)
+Solo necesitas **una**:
 
-| Variable | Dónde obtenerla |
-|----------|-----------------|
-| `OPENROUTER_API_KEY` | [openrouter.ai/keys](https://openrouter.ai/keys) |
+| Variable | Obligatoria | Dónde obtenerla |
+|----------|-------------|-----------------|
+| `OPENROUTER_API_KEY` | Sí (para IA real) | [openrouter.ai/keys](https://openrouter.ai/keys) |
 
-Sin esta key el proyecto funciona en **modo demo** (respuestas predefinidas, sin LLM).
+Sin esta key, la demo funciona en **modo demo** (respuestas predefinidas, sin LLM).
 
-### Opcional pero recomendado
-
-| Variable | Para qué | Default |
-|----------|----------|---------|
-| `OPENROUTER_MODEL` | Modelo de IA | `google/gemini-2.0-flash-001` |
-| `OPENROUTER_SITE_URL` | Metadata OpenRouter (ranking) | URL de Vercel |
-| `OPENROUTER_SITE_NAME` | Nombre del sitio en OpenRouter | `Lúmen Outfit Demo` |
-
-### Opcional (voz del agente)
-
-| Variable | Para qué | Sin ella |
-|----------|----------|----------|
-| `ELEVENLABS_API_KEY` | TTS de calidad | Usa voz del navegador |
-| `ELEVENLABS_VOICE_ID` | Voz específica | Sarah (default ElevenLabs) |
-| `ELEVENLABS_MODEL_ID` | Modelo TTS | `eleven_multilingual_v2` |
-
-### No requiere API key
-
-- **STT (micrófono):** Web Speech API del navegador (Chrome recomendado)
-- **MCP server local:** `npm run mcp` — no necesita keys extra
+Opcional: `OPENROUTER_MODEL` para cambiar de modelo sin tocar código (default `google/gemini-2.5-flash`).
 
 ## Deploy en Vercel
 
-1. Importa el repo de GitHub en [vercel.com](https://vercel.com)
-2. En **Settings → Environment Variables** agrega:
-   - `OPENROUTER_API_KEY` (obligatorio para IA en vivo)
-   - `ELEVENLABS_API_KEY` (opcional)
+1. Importa el repo de GitHub en [vercel.com/new](https://vercel.com/new)
+2. En **Settings → Environment Variables** agrega únicamente:
+   - `OPENROUTER_API_KEY`
 3. Deploy
 
 ## MCP server (opcional)
@@ -78,8 +58,8 @@ Configura en tu cliente MCP:
 
 ## Uso de la demo
 
-1. En `/demo`, abre la burbuja del agente y mantén presionado el micrófono.
-2. O usa los chips de ejemplo / campo de texto.
+1. En `/demo`, abre la burbuja del asistente.
+2. Escribe o usa los chips de ejemplo.
 3. El asistente resalta productos, navega y actualiza el carrito.
 
 ### Ejemplos de frases
@@ -93,7 +73,6 @@ Configura en tu cliente MCP:
 
 - `src/app/demo` — Tienda + burbuja flotante del agente
 - `src/app/api/agent` — Agente vía OpenRouter + SSE
-- `src/app/api/tts` — ElevenLabs TTS
 - `src/lib/store` — Catálogo y estado Zustand
 - `src/lib/agent` — Tools, prompts, OpenRouter
 - `mcp-server/store.ts` — Servidor MCP

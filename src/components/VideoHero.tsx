@@ -8,14 +8,14 @@ const SCENES = [
     id: "hook",
     eyebrow: "Lúmen Outfit",
     title: "¿Y si tu tienda entendiera lo que quieres?",
-    sub: "Un asistente de voz que navega, recomienda y compra contigo.",
+    sub: "Un asistente que navega, recomienda y compra contigo.",
     audioSrc: "/video/narration/hook.mp3",
     visual: "mic" as const,
   },
   {
     id: "contrast",
     eyebrow: "Antes vs ahora",
-    title: "Menús y filtros vs. solo hablar",
+    title: "Menús y filtros vs. solo pedirlo",
     sub: '"Busco algo casual para el fin" — y listo.',
     audioSrc: "/video/narration/contrast.mp3",
     visual: "contrast" as const,
@@ -32,35 +32,79 @@ const SCENES = [
     id: "cta",
     eyebrow: "Demo",
     title: "Pruébalo en tiempo real",
-    sub: "Habla con el asistente y mira la tienda moverse sola.",
+    sub: "Escribe al asistente y mira la tienda moverse sola.",
     audioSrc: "/video/narration/cta.mp3",
     visual: "bubble" as const,
   },
 ] as const;
 
-const SCENE_GAP_MS = 120;
 const BG_MUSIC_SRC = "/video/narration/bg-music.mp3";
-const BG_MUSIC_VOLUME = 0.8;
-const BG_MUSIC_DUCK = 0.38;
+const MUSIC_PLAY_VOLUME = 0.55;
+const FALLBACK_SCENE_SEC = 6;
 
-type PlayerState = "idle" | "playing" | "ended";
+type PlayerState = "idle" | "playing" | "paused" | "ended";
+
+function formatTime(sec: number) {
+  if (!Number.isFinite(sec) || sec < 0) sec = 0;
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
 
 function PlayIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M8 5.14v13.72L19 12 8 5.14z" />
     </svg>
   );
 }
 
-function wait(ms: number, signal: AbortSignal) {
-  return new Promise<void>((resolve, reject) => {
-    const id = window.setTimeout(resolve, ms);
-    signal.addEventListener("abort", () => {
-      window.clearTimeout(id);
-      reject(new DOMException("Aborted", "AbortError"));
-    });
-  });
+function PauseIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+    </svg>
+  );
+}
+
+function PrevIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M7 5h2v14H7zM20 5v14L9 12z" />
+    </svg>
+  );
+}
+
+function NextIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M15 5h2v14h-2zM4 5l11 7L4 19z" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+function FullscreenIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" />
+    </svg>
+  );
+}
+
+function ExitFullscreenIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M3 8V5a2 2 0 0 1 2-2h3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M21 16v3a2 2 0 0 1-2 2h-3" />
+    </svg>
+  );
 }
 
 function SceneVisual({ type }: { type: (typeof SCENES)[number]["visual"] }) {
@@ -70,7 +114,7 @@ function SceneVisual({ type }: { type: (typeof SCENES)[number]["visual"] }) {
         <span className="intro-mic-ring intro-mic-ring--1" />
         <span className="intro-mic-ring intro-mic-ring--2" />
         <span className="intro-mic-ring intro-mic-ring--3" />
-        <span className="intro-mic-icon">🎙</span>
+        <span className="intro-mic-icon">✨</span>
       </div>
     );
   }
@@ -129,244 +173,327 @@ function SceneVisual({ type }: { type: (typeof SCENES)[number]["visual"] }) {
   );
 }
 
-/** Un solo reproductor de voz + uno de música — evita solapamientos. */
-class IntroAudioEngine {
-  private narration = new Audio();
-  private music = new Audio(BG_MUSIC_SRC);
-  private musicFadeId: number | null = null;
-  private narrationCleanup: (() => void) | null = null;
-
-  constructor() {
-    this.narration.preload = "auto";
-    this.music.preload = "auto";
-    this.music.loop = true;
-  }
-
-  preload() {
-    SCENES.forEach((s) => {
-      const a = new Audio(s.audioSrc);
-      a.preload = "auto";
-    });
-    this.music.load();
-  }
-
-  private clearMusicFade() {
-    if (this.musicFadeId !== null) {
-      window.clearInterval(this.musicFadeId);
-      this.musicFadeId = null;
-    }
-  }
-
-  private fadeMusic(to: number, ms: number, onDone?: () => void) {
-    this.clearMusicFade();
-    const from = this.music.volume;
-    const steps = Math.max(1, Math.round(ms / 40));
-    let step = 0;
-    this.musicFadeId = window.setInterval(() => {
-      step += 1;
-      this.music.volume = from + (to - from) * (step / steps);
-      if (step >= steps) {
-        this.clearMusicFade();
-        this.music.volume = to;
-        onDone?.();
-      }
-    }, 40);
-  }
-
-  stopNarration() {
-    this.narrationCleanup?.();
-    this.narrationCleanup = null;
-    this.narration.pause();
-    this.narration.currentTime = 0;
-    this.narration.removeAttribute("src");
-    this.narration.load();
-  }
-
-  async startMusic() {
-    this.clearMusicFade();
-    this.music.pause();
-    this.music.currentTime = 0;
-    this.music.volume = BG_MUSIC_VOLUME;
-    this.music.loop = true;
-    await this.music.play();
-  }
-
-  duckMusic() {
-    this.clearMusicFade();
-    this.music.volume = BG_MUSIC_DUCK;
-  }
-
-  liftMusic() {
-    this.fadeMusic(BG_MUSIC_VOLUME, 500);
-  }
-
-  stopMusic(immediate = false) {
-    this.clearMusicFade();
-    if (immediate) {
-      this.music.pause();
-      this.music.currentTime = 0;
-      return;
-    }
-    this.fadeMusic(0, 700, () => {
-      this.music.pause();
-      this.music.currentTime = 0;
-    });
-  }
-
-  stopAll() {
-    this.stopNarration();
-    this.stopMusic(true);
-  }
-
-  playNarration(src: string, signal: AbortSignal): Promise<void> {
-    this.stopNarration();
-    this.duckMusic();
-
-    return new Promise((resolve, reject) => {
-      const audio = this.narration;
-      audio.src = src;
-      audio.currentTime = 0;
-
-      const cleanup = () => {
-        audio.removeEventListener("ended", onEnd);
-        audio.removeEventListener("error", onErr);
-        signal.removeEventListener("abort", onAbort);
-        this.narrationCleanup = null;
-      };
-
-      const onEnd = () => {
-        cleanup();
-        this.liftMusic();
-        resolve();
-      };
-
-      const onErr = () => {
-        cleanup();
-        this.liftMusic();
-        reject(new Error(`narration-failed:${src}`));
-      };
-
-      const onAbort = () => {
-        audio.pause();
-        cleanup();
-        this.liftMusic();
-        reject(new DOMException("Aborted", "AbortError"));
-      };
-
-      this.narrationCleanup = cleanup;
-      signal.addEventListener("abort", onAbort);
-      audio.addEventListener("ended", onEnd, { once: true });
-      audio.addEventListener("error", onErr, { once: true });
-
-      void audio.play().catch((err) => {
-        cleanup();
-        this.liftMusic();
-        reject(err);
-      });
-    });
-  }
-}
-
 export function VideoHero() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const engineRef = useRef<IntroAudioEngine | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
-  const playingRef = useRef(false);
+  const narrationRef = useRef<HTMLAudioElement | null>(null);
+  const musicRef = useRef<HTMLAudioElement | null>(null);
+  const rafRef = useRef<number | null>(null);
 
-  const [scene, setScene] = useState(0);
+  const durationsRef = useRef<number[]>(SCENES.map(() => FALLBACK_SCENE_SEC));
+  const prefixRef = useRef<number[]>([]);
+  const totalRef = useRef<number>(SCENES.length * FALLBACK_SCENE_SEC);
+  const playingRef = useRef(false);
+  const sceneRef = useRef(0);
+  const seekingRef = useRef(false);
+  const draggingRef = useRef(false);
+
+  const [sceneIndex, setSceneIndex] = useState(0);
   const [playerState, setPlayerState] = useState<PlayerState>("idle");
   const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [totalTime, setTotalTime] = useState(SCENES.length * FALLBACK_SCENE_SEC);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
-  const [statusHint, setStatusHint] = useState<string | null>(null);
 
-  const getEngine = () => {
-    if (!engineRef.current) engineRef.current = new IntroAudioEngine();
-    return engineRef.current;
-  };
-
-  const stopPlayback = useCallback(() => {
-    playingRef.current = false;
-    abortRef.current?.abort();
-    abortRef.current = null;
-    getEngine().stopAll();
+  const recomputeTotals = useCallback(() => {
+    const prefix: number[] = [];
+    let acc = 0;
+    for (const d of durationsRef.current) {
+      prefix.push(acc);
+      acc += d;
+    }
+    prefixRef.current = prefix;
+    totalRef.current = acc;
+    setTotalTime(acc);
   }, []);
 
-  const runPlayback = useCallback(async () => {
-    if (playingRef.current) return;
-    playingRef.current = true;
+  const getNarration = useCallback(() => {
+    if (!narrationRef.current) narrationRef.current = new Audio();
+    return narrationRef.current;
+  }, []);
 
-    abortRef.current?.abort();
-    const engine = getEngine();
-    engine.stopAll();
-
-    setPlayerState("playing");
-    setScene(0);
-    setProgress(0);
-    setStatusHint(null);
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    try {
-      await engine.startMusic();
-    } catch {
-      setStatusHint("No se pudo iniciar la música. Haz clic de nuevo en Ver el video.");
+  const getMusic = useCallback(() => {
+    if (!musicRef.current) {
+      const m = new Audio(BG_MUSIC_SRC);
+      m.loop = true;
+      m.preload = "auto";
+      musicRef.current = m;
     }
+    return musicRef.current;
+  }, []);
 
-    const sceneDurations: number[] = [];
-    for (const s of SCENES) {
-      const probe = new Audio(s.audioSrc);
-      await new Promise<void>((resolve, reject) => {
-        probe.addEventListener("loadedmetadata", () => resolve(), { once: true });
-        probe.addEventListener("error", () => reject(new Error("missing")), { once: true });
-      });
-      sceneDurations.push(Math.ceil(probe.duration * 1000) + SCENE_GAP_MS);
-    }
+  const stopRaf = useCallback(() => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    rafRef.current = null;
+  }, []);
 
-    const totalDuration = sceneDurations.reduce((a, b) => a + b, 0);
-    let completedMs = 0;
+  const updateProgress = useCallback(() => {
+    if (seekingRef.current) return;
+    const n = narrationRef.current;
+    const prefix = prefixRef.current[sceneRef.current] ?? 0;
+    const t = prefix + (n?.currentTime || 0);
+    const total = totalRef.current || 1;
+    setCurrentTime(Math.min(t, total));
+    setProgress(Math.min(100, (t / total) * 100));
+  }, []);
 
-    try {
-      for (let i = 0; i < SCENES.length; i++) {
-        if (controller.signal.aborted) return;
+  const startRaf = useCallback(() => {
+    stopRaf();
+    const tick = () => {
+      updateProgress();
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+  }, [stopRaf, updateProgress]);
 
-        const current = SCENES[i];
-        setScene(i);
-        const sceneStarted = Date.now();
+  const loadScene = useCallback(
+    (i: number, offset: number, autoplay: boolean) => {
+      const n = getNarration();
+      sceneRef.current = i;
+      setSceneIndex(i);
 
-        await engine.playNarration(current.audioSrc, controller.signal);
-
-        const elapsed = Date.now() - sceneStarted;
-        const remaining = Math.max(0, sceneDurations[i] - elapsed);
-        if (remaining > 0) await wait(remaining, controller.signal);
-
-        completedMs += sceneDurations[i];
-        setProgress(Math.min(100, (completedMs / totalDuration) * 100));
+      if (n.dataset.scene !== String(i)) {
+        n.src = SCENES[i].audioSrc;
+        n.dataset.scene = String(i);
+        n.load();
       }
-    } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") {
-        playingRef.current = false;
-        return;
-      }
-      setStatusHint("No se pudo reproducir el audio del video.");
-    }
 
-    if (controller.signal.aborted) {
-      playingRef.current = false;
-      return;
-    }
+      const applyOffset = () => {
+        try {
+          const max = Number.isFinite(n.duration) && n.duration > 0 ? n.duration - 0.1 : offset;
+          n.currentTime = Math.max(0, Math.min(offset, max));
+        } catch {
+          /* noop */
+        }
+        if (autoplay) void n.play().catch(() => {});
+      };
 
-    engine.stopMusic();
+      if (n.readyState >= 1) applyOffset();
+      else n.addEventListener("loadedmetadata", applyOffset, { once: true });
+    },
+    [getNarration],
+  );
+
+  const endPlayback = useCallback(() => {
     playingRef.current = false;
+    stopRaf();
+    const music = musicRef.current;
+    if (music) {
+      music.pause();
+    }
     setProgress(100);
+    setCurrentTime(totalRef.current);
     setPlayerState("ended");
     containerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [stopRaf]);
+
+  const startFromBeginning = useCallback(() => {
+    playingRef.current = true;
+    setPlayerState("playing");
+    setProgress(0);
+    setCurrentTime(0);
+
+    const music = getMusic();
+    music.currentTime = 0;
+    music.volume = MUSIC_PLAY_VOLUME;
+    void music.play().catch(() => {});
+
+    loadScene(0, 0, true);
+    startRaf();
+  }, [getMusic, loadScene, startRaf]);
+
+  const pause = useCallback(() => {
+    playingRef.current = false;
+    setPlayerState("paused");
+    narrationRef.current?.pause();
+    musicRef.current?.pause();
+    stopRaf();
+  }, [stopRaf]);
+
+  const resume = useCallback(() => {
+    playingRef.current = true;
+    setPlayerState("playing");
+    const music = getMusic();
+    music.volume = MUSIC_PLAY_VOLUME;
+    void music.play().catch(() => {});
+    void narrationRef.current?.play().catch(() => {});
+    startRaf();
+  }, [getMusic, startRaf]);
+
+  const togglePlay = useCallback(() => {
+    if (playerState === "playing") {
+      pause();
+    } else if (playerState === "paused") {
+      resume();
+    } else {
+      startFromBeginning();
+    }
+  }, [playerState, pause, resume, startFromBeginning]);
+
+  const commitSeek = useCallback(
+    (t: number, resumePlay: boolean) => {
+      const total = totalRef.current || 1;
+      const clamped = Math.max(0, Math.min(t, total - 0.05));
+      const prefix = prefixRef.current;
+      let i = prefix.length - 1;
+      for (let k = 0; k < prefix.length; k++) {
+        const start = prefix[k];
+        const end = k + 1 < prefix.length ? prefix[k + 1] : total;
+        if (clamped >= start && clamped < end) {
+          i = k;
+          break;
+        }
+      }
+      const offset = clamped - (prefix[i] ?? 0);
+
+      loadScene(i, offset, resumePlay);
+      setCurrentTime(clamped);
+      setProgress((clamped / total) * 100);
+
+      if (resumePlay) {
+        playingRef.current = true;
+        setPlayerState("playing");
+        const music = getMusic();
+        music.volume = MUSIC_PLAY_VOLUME;
+        void music.play().catch(() => {});
+        startRaf();
+      } else if (playerState === "ended") {
+        setPlayerState("paused");
+      }
+    },
+    [loadScene, getMusic, startRaf, playerState],
+  );
+
+  const timeFromClientX = useCallback((clientX: number, rect: DOMRect) => {
+    const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    return frac * (totalRef.current || 1);
+  }, []);
+
+  const onScrubDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      draggingRef.current = true;
+      seekingRef.current = true;
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        /* noop */
+      }
+      const t = timeFromClientX(e.clientX, e.currentTarget.getBoundingClientRect());
+      const total = totalRef.current || 1;
+      setCurrentTime(t);
+      setProgress((t / total) * 100);
+    },
+    [timeFromClientX],
+  );
+
+  const onScrubMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!draggingRef.current) return;
+      const t = timeFromClientX(e.clientX, e.currentTarget.getBoundingClientRect());
+      const total = totalRef.current || 1;
+      setCurrentTime(t);
+      setProgress((t / total) * 100);
+    },
+    [timeFromClientX],
+  );
+
+  const onScrubUp = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      const t = timeFromClientX(e.clientX, e.currentTarget.getBoundingClientRect());
+      commitSeek(t, playingRef.current);
+      const n = narrationRef.current;
+      if (n) n.addEventListener("seeked", () => (seekingRef.current = false), { once: true });
+      window.setTimeout(() => (seekingRef.current = false), 400);
+    },
+    [timeFromClientX, commitSeek],
+  );
+
+  const goToScene = useCallback(
+    (i: number) => {
+      const clamped = Math.max(0, Math.min(i, SCENES.length - 1));
+      commitSeek((prefixRef.current[clamped] ?? 0) + 0.02, playingRef.current);
+    },
+    [commitSeek],
+  );
+
+  const prevScene = useCallback(() => {
+    const n = narrationRef.current;
+    const withinScene = (n?.currentTime || 0) > 2;
+    goToScene(withinScene ? sceneRef.current : sceneRef.current - 1);
+  }, [goToScene]);
+
+  const nextScene = useCallback(() => {
+    goToScene(sceneRef.current + 1);
+  }, [goToScene]);
+
+  const toggleFullscreen = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => {});
+    } else {
+      void el.requestFullscreen().catch(() => {});
+    }
   }, []);
 
   const startVideo = useCallback(() => {
     containerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    void runPlayback();
-  }, [runPlayback]);
+    startFromBeginning();
+  }, [startFromBeginning]);
+
+  useEffect(() => {
+    const n = getNarration();
+    n.preload = "auto";
+
+    const onEnded = () => {
+      if (!playingRef.current) return;
+      const next = sceneRef.current + 1;
+      if (next < SCENES.length) loadScene(next, 0, true);
+      else endPlayback();
+    };
+    n.addEventListener("ended", onEnded);
+
+    // Precargar metadatos de duración de cada escena para la barra de progreso
+    let cancelled = false;
+    Promise.all(
+      SCENES.map(
+        (s, i) =>
+          new Promise<number>((resolve) => {
+            const probe = new Audio();
+            probe.preload = "metadata";
+            probe.src = s.audioSrc;
+            probe.addEventListener(
+              "loadedmetadata",
+              () => resolve(Number.isFinite(probe.duration) ? probe.duration : FALLBACK_SCENE_SEC),
+              { once: true },
+            );
+            probe.addEventListener("error", () => resolve(FALLBACK_SCENE_SEC), { once: true });
+            void i;
+          }),
+      ),
+    ).then((durations) => {
+      if (cancelled) return;
+      durationsRef.current = durations;
+      recomputeTotals();
+    });
+
+    recomputeTotals();
+
+    getMusic();
+
+    return () => {
+      cancelled = true;
+      n.removeEventListener("ended", onEnded);
+    };
+  }, [getNarration, getMusic, loadScene, endPlayback, recomputeTotals]);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -376,31 +503,40 @@ export function VideoHero() {
 
     const onStart = () => startVideo();
     window.addEventListener("lumen:start-intro-video", onStart);
-    getEngine().preload();
 
     return () => {
       mq.removeEventListener("change", handler);
       window.removeEventListener("lumen:start-intro-video", onStart);
-      stopPlayback();
     };
-  }, [startVideo, stopPlayback]);
+  }, [startVideo]);
 
+  useEffect(() => {
+    return () => {
+      stopRaf();
+      narrationRef.current?.pause();
+      musicRef.current?.pause();
+    };
+  }, [stopRaf]);
+
+  // Preview animado cuando aún no se reproduce
   useEffect(() => {
     if (playerState !== "idle" || reduceMotion) return;
     const id = window.setInterval(() => {
-      setScene((s) => (s + 1) % SCENES.length);
-    }, 5500);
+      setSceneIndex((s) => (s + 1) % SCENES.length);
+    }, 5000);
     return () => window.clearInterval(id);
   }, [playerState, reduceMotion]);
 
+  const isIdle = playerState === "idle";
   const isPlaying = playerState === "playing";
   const isEnded = playerState === "ended";
+  const showControls = !isIdle;
 
   return (
     <div
       id="intro-video"
       ref={containerRef}
-      className={`video-showcase intro-slideshow ${isPlaying ? "intro-slideshow--playing" : ""} ${isEnded ? "intro-slideshow--ended" : ""}`}
+      className={`video-showcase intro-slideshow ${showControls ? "intro-slideshow--active" : ""} ${isEnded ? "intro-slideshow--ended" : ""} ${isFullscreen ? "intro-slideshow--fs" : ""}`}
       aria-label="Video introductorio"
     >
       <div className="intro-slideshow__glow" aria-hidden="true" />
@@ -408,8 +544,8 @@ export function VideoHero() {
       {SCENES.map((s, i) => (
         <div
           key={s.id}
-          className={`intro-slide ${i === scene ? "intro-slide--active" : ""}`}
-          aria-hidden={i !== scene}
+          className={`intro-slide ${i === sceneIndex ? "intro-slide--active" : ""}`}
+          aria-hidden={i !== sceneIndex}
         >
           <SceneVisual type={s.visual} />
           <p className="intro-slide__eyebrow">{s.eyebrow}</p>
@@ -418,63 +554,95 @@ export function VideoHero() {
         </div>
       ))}
 
-      <div className="intro-dots" aria-hidden={isPlaying || isEnded}>
-        {SCENES.map((_, i) => (
-          <span key={i} className={`intro-dot ${i === scene ? "intro-dot--active" : ""}`} />
-        ))}
-      </div>
-
-      {(isPlaying || isEnded) && (
-        <div className="intro-progress" aria-hidden="true">
-          <span className="intro-progress__bar" style={{ width: `${progress}%` }} />
-        </div>
-      )}
-
-      {isPlaying && (
-        <p className="intro-playing-label" aria-live="polite">
-          Reproduciendo escena {scene + 1} de {SCENES.length}
-        </p>
-      )}
-
-      {!isPlaying && !isEnded && (
-        <button type="button" className="intro-cta-link" onClick={startVideo}>
-          <span className="video-play-prompt-icon">
-            <PlayIcon />
-          </span>
-          <span>Ver el video</span>
-        </button>
-      )}
-
-      {isPlaying && (
-        <button
-          type="button"
-          className="intro-skip-btn"
-          onClick={() => {
-            stopPlayback();
-            setPlayerState("ended");
-            setProgress(100);
-            containerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-          }}
-        >
-          Saltar
-        </button>
-      )}
-
-      {statusHint && !isPlaying && (
-        <p className="intro-status-hint">{statusHint}</p>
+      {isIdle && (
+        <>
+          <div className="intro-dots" aria-hidden="true">
+            {SCENES.map((_, i) => (
+              <span key={i} className={`intro-dot ${i === sceneIndex ? "intro-dot--active" : ""}`} />
+            ))}
+          </div>
+          <button type="button" className="intro-cta-link" onClick={startVideo}>
+            <span className="video-play-prompt-icon">
+              <PlayIcon />
+            </span>
+            <span>Ver el video</span>
+          </button>
+        </>
       )}
 
       {isEnded && (
         <div className="intro-video-end">
-          <p className="intro-video-end__text">¿Listo para probarlo en vivo?</p>
-          <Link href="/demo" className="intro-cta-link intro-cta-link--end">
-            <span className="video-play-prompt-icon">
-              <PlayIcon />
+          <p className="intro-video-end__text">¿Te late? Pruébalo tú mismo</p>
+          <Link href="/demo" className="intro-demo-cta">
+            <span>Dale click para ver la demo</span>
+            <span className="intro-demo-cta__arrow">
+              <ArrowRightIcon />
             </span>
-            <span>Entrar a la demo en tiempo real</span>
           </Link>
-          <button type="button" className="intro-replay-btn" onClick={startVideo}>
-            Ver de nuevo
+        </div>
+      )}
+
+      {showControls && (
+        <div className="intro-controls" role="group" aria-label="Controles del video">
+          <button
+            type="button"
+            className="intro-controls__btn intro-controls__btn--main"
+            onClick={togglePlay}
+            aria-label={isPlaying ? "Pausar" : "Reproducir"}
+          >
+            {isPlaying ? <PauseIcon /> : <PlayIcon />}
+          </button>
+
+          <button
+            type="button"
+            className="intro-controls__btn"
+            onClick={prevScene}
+            aria-label="Escena anterior"
+          >
+            <PrevIcon />
+          </button>
+
+          <button
+            type="button"
+            className="intro-controls__btn"
+            onClick={nextScene}
+            aria-label="Escena siguiente"
+          >
+            <NextIcon />
+          </button>
+
+          <span className="intro-controls__time">{formatTime(currentTime)}</span>
+
+          <div
+            className="intro-scrubber"
+            onPointerDown={onScrubDown}
+            onPointerMove={onScrubMove}
+            onPointerUp={onScrubUp}
+            role="slider"
+            aria-label="Barra de progreso"
+            aria-valuemin={0}
+            aria-valuemax={Math.round(totalTime)}
+            aria-valuenow={Math.round(currentTime)}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowRight") commitSeek(currentTime + 5, playingRef.current);
+              if (e.key === "ArrowLeft") commitSeek(currentTime - 5, playingRef.current);
+            }}
+          >
+            <span className="intro-scrubber__fill" style={{ width: `${progress}%` }}>
+              <span className="intro-scrubber__thumb" />
+            </span>
+          </div>
+
+          <span className="intro-controls__time">{formatTime(totalTime)}</span>
+
+          <button
+            type="button"
+            className="intro-controls__btn"
+            onClick={toggleFullscreen}
+            aria-label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+          >
+            {isFullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
           </button>
         </div>
       )}
@@ -486,8 +654,8 @@ export function CapabilitiesStrip() {
   const items = [
     "El agente busca y resalta productos en vivo",
     "Navega automáticamente a fichas y carrito",
-    "Agrega al carrito por voz con talla",
-    "Responde hablado mientras mueves la tienda",
+    "Agrega al carrito con talla",
+    "Responde y mueve la tienda por ti",
   ];
 
   return (

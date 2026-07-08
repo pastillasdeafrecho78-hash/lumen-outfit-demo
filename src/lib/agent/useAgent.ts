@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
 import type { AgentUIEvent } from "@/lib/store/types";
 import { PRODUCTS } from "@/lib/store/catalog";
 import { useStore } from "@/lib/store/useStore";
@@ -71,77 +71,4 @@ export function useAgentHealth() {
       .then((d) => setAgentReady(d.ready !== false))
       .catch(() => setAgentReady(true));
   }, [setAgentReady]);
-}
-
-export function useTts() {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const setAgentSpeaking = useStore((s) => s.setAgentSpeaking);
-
-  const speak = useCallback(
-    async (text: string) => {
-      if (!text.trim()) return;
-      setAgentSpeaking(true);
-
-      const speakWithBrowser = () =>
-        new Promise<void>((resolve) => {
-          if (!("speechSynthesis" in window)) {
-            resolve();
-            return;
-          }
-          window.speechSynthesis.cancel();
-          const utter = new SpeechSynthesisUtterance(text);
-          utter.lang = "es-MX";
-          utter.rate = 1;
-          utter.onend = () => resolve();
-          utter.onerror = () => resolve();
-          window.speechSynthesis.speak(utter);
-        });
-
-      try {
-        const res = await fetch("/api/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text }),
-        });
-
-        if (!res.ok) {
-          await speakWithBrowser();
-          setAgentSpeaking(false);
-          return;
-        }
-
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        if (audioRef.current) {
-          audioRef.current.pause();
-          URL.revokeObjectURL(audioRef.current.src);
-        }
-        const audio = new Audio(url);
-        audioRef.current = audio;
-        audio.onended = () => {
-          setAgentSpeaking(false);
-          URL.revokeObjectURL(url);
-        };
-        audio.onerror = async () => {
-          await speakWithBrowser();
-          setAgentSpeaking(false);
-        };
-        await audio.play();
-      } catch {
-        await speakWithBrowser();
-        setAgentSpeaking(false);
-      }
-    },
-    [setAgentSpeaking],
-  );
-
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-    };
-  }, []);
-
-  return { speak };
 }
